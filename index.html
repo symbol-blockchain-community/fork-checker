@@ -18,7 +18,7 @@
   <div class="container mt-3">
     <div class="row align-items-center">
       <div class="col-12 m-2"><a href="https://symbol-tools.com/symbolTools/view/tool/nodeList.html" target="_blank" rel="noopener noreferrer">Symbol Node List</a></div>
-      <div class="col-10"><input type="text" class="form-control" id="nodeUrlInput" placeholder="Ex) https://dual-1.nodes-xym.work" value="https://dual-1.nodes-xym.work:3001"></div>
+      <div class="col-10"><input type="text" class="form-control" id="nodeUrlInput" placeholder="Ex) https://dual-1.nodes-xym.work:3001"></div>
       <div class="col-1 d-flex justify-content-center"><i class="fa-solid fa-trash" onclick="clearInput()"></i></div>
       <div class="col-1 d-flex justify-content-center"><i class="fa-solid fa-paste fa-lg" onclick="pasteToInput()"></i></div>
     </div>
@@ -47,7 +47,7 @@
     <div class="mt-3">
       <div class="row">
         <div class="col-12">
-          <div class="alert" role="alert" id="result"></div>
+          <div id="result"></div>
         </div>
       </div>
     </div>
@@ -77,6 +77,7 @@
 
     function clearInput() {
       document.getElementById('nodeUrlInput').value = '';
+      $('#result').empty();
       toggleResult(false);
     }
 
@@ -115,7 +116,7 @@
         setButtonSpinnerState(false); // Hide spinner and enable button
       } catch (error) {
         console.error('Error: ', error);
-        alert(`ノードリストの取得に失敗しました。「${statisticsServerText}」を切り替えてお試しください。`);
+        alert(`ノードリストの取得に失敗しました。\nURLを再確認してください。3000ポートの指定も必要です。\nまたは、「${statisticsServerText}」を切り替えてお試しください。`);
         setButtonSpinnerState(false); // Hide spinner and enable button
       }
     }
@@ -178,22 +179,50 @@
       return d.promise();
     }
 
-    async function checkFork(nodeUrl, node_list) {
-
+    async function checkFork(baseNode, node_list) {
       // ノードリストからランダムにノードを選択し、生きているノードを20個取得する
       const nodes = await Promise.all([...Array(20)].map(() => connectNode(node_list, $.Deferred())));
-      console.log(nodes);
-
-      // Placeholder for actual fork check logic
-      displayResult(nodeUrl, '123456', 'abc123def456'); // Example result
+      // 基軸とするブロック高さを取得（少し前のブロック高に調整）
+      const baseHeight = Number((await $.ajax({url: `${baseNode}/chain/info`,type: 'GET',timeout: 1000})).height) - 5;
+      $('#result').empty();
+      $("#result").show();
+      // 基軸となるブロック高からマイナス5のブロック高になるまでの間ループさせる
+      for (let i = 0; i < 10; i++) {
+        // ノードリストからブロック高さに対応するハッシュ値を取得
+        const results = await Promise.all(nodes.map(async (node) => await getBlocks(node, baseHeight - i)));
+        // 基軸とするハッシュ値を取得
+        const baseHashValue = (await $.ajax({url: `${baseNode}/blocks/${baseHeight - i}`,type: 'GET',timeout: 1000})).meta.hash;
+        console.log(baseHeight - i, results);
+        // ホスト名、ブロック高、ハッシュ値を表示
+        $(`<div>ホスト：${baseNode}<br />ブロック高：${baseHeight - i}<br />ハッシュ値：<div class="text-truncate">${baseHashValue}</div></div>`).appendTo("#result");
+        // result表示カード用を作成
+        const card = $(`<div id="card-${i}" class="alert alert-light" role="alert"></div>`);
+        results.forEach((result, j) => {
+          card.append(
+            $(`<div class="text-wrap">${createDisplay(result, baseHeight - i, baseHashValue)}</div>`)
+            );
+        });
+        $("#result").append(card);
+      }
     }
 
-    function displayResult(nodeUrl, blockHeight, hashValue) {
-      const resultDiv = document.getElementById('result');
-      resultDiv.style.display = 'block';
-      resultDiv.className = 'alert alert-success';
-      const checkMark = '<i class="fas fa-check-circle"></i>';
-      resultDiv.innerHTML = `${nodeUrl} ${checkMark} 比較ブロック高：${blockHeight} ハッシュ値：${hashValue}`;
+    async function getBlocks(node, blockHeight){
+      // ブロック高さからハッシュ値を取得する
+      try {
+        const hashValue = (await $.ajax({url: `${node}/blocks/${blockHeight}`,type: 'GET',timeout: 1000,})).meta.hash;
+        return {"host": node, hashValue};
+      } catch (error) {
+        return {"host": node, hashValue: "Error"};
+      }
+    }
+
+    function createDisplay(data, blockHeight, baseHashValue) {
+      let checkMark = '<i class="fas fa-check-circle" style="color: green;"></i>';
+      if(data.hashValue != baseHashValue){
+        //赤い感じ
+        checkMark = '<i class="fa-solid fa-circle-exclamation" style="color: red;"></i>';
+      }
+      return `${data.host} ${checkMark} <br>ハッシュ値：<div class="text-truncate">${data.hashValue}</div>`
     }
   </script>
 </body>
