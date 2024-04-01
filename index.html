@@ -7,54 +7,29 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
-    #result {
-      display: none;
-    }
-    .result-success {
-      color: #155724;
-      background-color: #d4edda;
-    }
-    .result-error {
-      color: #721c24;
-      background-color: #f8d7da;
-    }
-    .result-warning {
-      color: #856404;
-      background-color: #fff3cd;
-    }
+    #result { display: none; }
+    .result-success { color: #155724; background-color: #d4edda; }
+    .result-error { color: #721c24; background-color: #f8d7da; }
+    .result-warning { color: #856404; background-color: #fff3cd; }
   </style>
 </head>
 <body>
-  <nav class="navbar bg-body-tertiary">
-    <div class="container-fluid">
-      Fork Checker
-    </div>
-  </nav>
-
+  <nav class="navbar bg-body-tertiary"><div class="container-fluid">Fork Checker</div></nav>
   <div class="container mt-3">
     <div class="row align-items-center">
-      <div class="col-12 m-2">
-        <a href="https://symbol-tools.com/symbolTools/view/tool/nodeList.html" target="_blank" rel="noopener noreferrer">Symbol Node List</a>
-      </div>
-      <div class="col-10">
-        <input type="text" class="form-control" id="nodeUrlInput" placeholder="Ex) https://dual-1.nodes-xym.work" value="https://dual-1.nodes-xym.work:3001">
-      </div>
-      <div class="col-1 d-flex justify-content-center">
-        <i class="fa-solid fa-trash" onclick="clearInput()"></i>
-      </div>
-      <div class="col-1 d-flex justify-content-center">
-        <i class="fa-solid fa-paste fa-lg" onclick="pasteToInput()"></i>
-      </div>
+      <div class="col-12 m-2"><a href="https://symbol-tools.com/symbolTools/view/tool/nodeList.html" target="_blank" rel="noopener noreferrer">Symbol Node List</a></div>
+      <div class="col-10"><input type="text" class="form-control" id="nodeUrlInput" placeholder="Ex) https://dual-1.nodes-xym.work" value="https://dual-1.nodes-xym.work:3001"></div>
+      <div class="col-1 d-flex justify-content-center"><i class="fa-solid fa-trash" onclick="clearInput()"></i></div>
+      <div class="col-1 d-flex justify-content-center"><i class="fa-solid fa-paste fa-lg" onclick="pasteToInput()"></i></div>
     </div>
     <div class="row mt-3">
       <div class="col-10">
-        <select id="statisticsServerSelect" class="form-select" aria-label="Default select example">
+        <select id="statisticsServerSelect" class="form-select">
           <option selected value="https://symbol.services/nodes">デフォルト</option>
           <option value="https://mainnet.dusanjp.com:3004/nodes">デフォルトで繋がらない時</option>
         </select>
       </div>
     </div>
-
     <div class="mt-3">
       <div class="row">
         <div class="col-12">
@@ -62,7 +37,6 @@
         </div>
       </div>
     </div>
-
     <div class="mt-3" id="spinner" style="display: none;">
       <div class="d-flex justify-content-center">
         <div class="spinner-border" role="status">
@@ -70,95 +44,102 @@
         </div>
       </div>
     </div>
-
     <div class="mt-3">
       <div class="row">
         <div class="col-12">
-          <div class="alert" role="alert" id="result">
-            <!-- Result will be displayed here -->
-          </div>
+          <div class="alert" role="alert" id="result"></div>
         </div>
       </div>
     </div>
   </div>
 
+  <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+
   <script>
-    const protcol = "https://";
+    const protocol = "https://";
     const port = ":3001";
     const NETWORK_IDENTIFIER = 104;
     const REST_VERSION = "2.4.3";
     const GENERATION_HASH = "57F7DA205008026C776CB6AED843393F04CD458E0AA2D9F1D5F31A402072B2D6";
-    let nount = 1;
 
     document.getElementById('nodeUrlInput').addEventListener('input', function(e) {
-      const onlyHalfWidth = e.target.value.replace(/[^\x20-\x7E]/g, '');
-      e.target.value = onlyHalfWidth;
+      e.target.value = e.target.value.replace(/[^\x20-\x7E]/g, '');
     });
 
     function pasteToInput() {
-      navigator.clipboard.readText()
-      .then(text => {
+      navigator.clipboard.readText().then(text => {
         document.getElementById('nodeUrlInput').value = text;
-      })
-      .catch(err => {
+      }).catch(err => {
         console.error('Failed to read clipboard contents: ', err);
       });
     }
 
     function clearInput() {
       document.getElementById('nodeUrlInput').value = '';
-      clearResult();
+      toggleResult(false);
     }
 
-    function clearResult() {
-      // チェック結果を非表示にして内容をクリア
-      document.getElementById('result').style.display = 'none';
-      document.getElementById('result').innerHTML = '';
+    function toggleResult(display, className = '', message = '') {
+      const result = document.getElementById('result');
+      result.style.display = display ? 'block' : 'none';
+      if (display) {
+        result.className = `alert ${className}`;
+        result.innerHTML = message;
+      }
     }
 
-    function handleClick() {
-      clearResult();
-      // チェックボタンを非活性化
-      document.getElementById('check_btn').disabled = true;
-      document.getElementById('spinner').style.display = 'none';
+    function setButtonSpinnerState(isLoading) {
+      document.getElementById('check_btn').disabled = isLoading;
+      document.getElementById('spinner').style.display = isLoading ? 'block' : 'none';
+    }
+
+    async function handleClick() {
+      toggleResult(false); // Hide result
+      setButtonSpinnerState(true); // Show spinner and disable button
 
       const nodeUrl = document.getElementById('nodeUrlInput').value;
       if (!nodeUrl.match(/^https:\/\/.+/)) {
          alert('URLを正しく入力してください(httpは非対応)');
-        document.getElementById('check_btn').disabled = false;
-        document.getElementById('spinner').style.display = 'none';
+         setButtonSpinnerState(false);
         return;
       }
       // statisticsServerUrl からノードリストを取得
       const statisticsServerUrl = document.getElementById('statisticsServerSelect').value;
       const statisticsServerText = document.getElementById('statisticsServerSelect').options[document.getElementById('statisticsServerSelect').selectedIndex].text;
-      $.ajax({
-        url: statisticsServerUrl,
-        type: 'GET',
-        dataType: 'json',
-        timeout: 2500,
-        success: function(data) {
-          const node_list = createNodeArray(data);
-          checkFork(nodeUrl, node_list);
-        },
-        error: function(err) {
-          console.error('Failed to get node list: ', err);
-          alert(`ノードリストの取得に失敗しました。「${statisticsServerText}」を切り替えてお試しください。`);
-          document.getElementById('check_btn').disabled = false;
-          document.getElementById('spinner').style.display = 'none';
-        }
+
+      try {
+        const data = await fetchNodeList(statisticsServerUrl);
+        const node_list = createNodeArray(data);
+        await checkFork(nodeUrl, node_list);
+        setButtonSpinnerState(false); // Hide spinner and enable button
+      } catch (error) {
+        console.error('Error: ', error);
+        alert(`ノードリストの取得に失敗しました。「${statisticsServerText}」を切り替えてお試しください。`);
+        setButtonSpinnerState(false); // Hide spinner and enable button
+      }
+    }
+
+    function fetchNodeList(statisticsServerUrl) {
+      return new Promise((resolve, reject) => {
+        $.ajax({
+          url: statisticsServerUrl,
+          type: 'GET',
+          dataType: 'json',
+          timeout: 2500,
+          success: resolve,
+          error: reject
+        });
       });
     }
 
     function createNodeArray(nodes){
       let result_nodes = [];
       for(let i in nodes){
-        console.log(" === " + nount + "===");
         const node = isActiveNode(nodes[i]);
         if(node.active){
-          result_nodes.push(protcol + node.node.host + port)
+          result_nodes.push(protocol + node.node.host + port)
         }
-        nount++;
       };
       return result_nodes;
     }
@@ -205,10 +186,6 @@
 
       // Placeholder for actual fork check logic
       displayResult(nodeUrl, '123456', 'abc123def456'); // Example result
-
-      // チェックボタンを活性化
-      document.getElementById('check_btn').disabled = false;
-      document.getElementById('spinner').style.display = 'none';
     }
 
     function displayResult(nodeUrl, blockHeight, hashValue) {
@@ -216,11 +193,8 @@
       resultDiv.style.display = 'block';
       resultDiv.className = 'alert alert-success';
       const checkMark = '<i class="fas fa-check-circle"></i>';
-      resultDiv.innerHTML = `${nodeUrl} ${checkMark} ブロック高：${blockHeight} ハッシュ値：${hashValue}`;
+      resultDiv.innerHTML = `${nodeUrl} ${checkMark} 比較ブロック高：${blockHeight} ハッシュ値：${hashValue}`;
     }
   </script>
-
-  <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 </body>
 </html>
