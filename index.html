@@ -106,7 +106,7 @@
       setButtonSpinnerState(true); // Show spinner and disable button
 
       const nodeUrl = document.getElementById('nodeUrlInput').value;
-      if (!nodeUrl.match(/^https:\/\/.+/)) {
+      if (!nodeUrl.match(/^https:\/\/.+:3001$/)) {
          alert('URLを正しく入力してください(httpは非対応)');
          setButtonSpinnerState(false);
         return;
@@ -122,7 +122,7 @@
         setButtonSpinnerState(false); // Hide spinner and enable button
       } catch (error) {
         console.error('Error: ', error);
-        alert(`ノードリストの取得に失敗しました。\nURLを再確認してください。3000ポートの指定も必要です。\nまたは、「${statisticsServerText}」を切り替えてお試しください。`);
+        alert(`ノードリストの取得に失敗しました。\nURLを再確認してください。3001ポートの指定も必要です。\nまたは、「${statisticsServerText}」を切り替えてお試しください。`);
         setButtonSpinnerState(false); // Hide spinner and enable button
       }
     }
