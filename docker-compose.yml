@@ -1,0 +1,14 @@
+version: '3'
+services:
+  web:
+    image: nginx:1.17-alpine
+    ports:
+      - 3000:3000
+    volumes:
+      - ./:/work
+      - ./logs:/var/log/nginx
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./docker/nginx/cert/localhost.crt:/etc/nginx/ssl/localhost.crt
+      - ./docker/nginx/cert/localhost.key:/etc/nginx/ssl/localhost.key
+    environment:
+      - TZ=Asia/Tokyo
