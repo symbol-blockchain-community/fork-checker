@@ -8,6 +8,8 @@
 
 また、チェックするブロック高を指定することもできます。
 
+ツールは[こちら](https://symbol-blockchain-community.github.io/fork-checker)
+
 # Lisence
 
 This project is licensed under the MIT License, see the LICENSE.txt file for details
