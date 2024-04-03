@@ -10,7 +10,7 @@
 
 ツールは[こちら](https://symbol-blockchain-community.github.io/fork-checker)
 
-同期中のノードの確認ツールは[こちら](https://symbol-blockchain-community.github.io/fork-monitor.html)
+同期中のノードの確認ツールは[こちら](https://symbol-blockchain-community.github.io/fork-checker/fork-monitor.html)
 
 # Lisence
 
