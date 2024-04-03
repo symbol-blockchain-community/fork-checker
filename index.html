@@ -218,7 +218,7 @@
     async function getBlocks(node, blockHeight){
       // ブロック高さからハッシュ値を取得する
       try {
-        const hashValue = (await $.ajax({url: `${node}/blocks/${blockHeight}`,type: 'GET',timeout: 1000,})).meta.hash;
+        const hashValue = (await $.ajax({url: `${node}/blocks/${blockHeight}`,type: 'GET',timeout: 2500,})).meta.hash;
         return {"host": node, hashValue};
       } catch (error) {
         return {"host": node, hashValue: "取得Error"};
