@@ -102,12 +102,12 @@
         lner.newBlock();
       } catch (e) {
         console.log("fail websocket");
-        return await listenerKeepOpening(nodes);
+        return await listenerKeepOpening(repo, nodes);
       }
 
       lner.webSocket.onclose = async function () {
         console.log("listener onclose");
-        return await listenerKeepOpening(nodes);
+        return await listenerKeepOpening(repo, nodes);
       };
       return lner;
     }
