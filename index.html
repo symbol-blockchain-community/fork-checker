@@ -189,7 +189,7 @@
       // ノードリストからランダムにノードを選択し、生きているノードを20個取得する
       const nodes = await Promise.all([...Array(20)].map(() => connectNode(node_list, $.Deferred())));
       // 基軸とするブロック高さを取得（少し前のブロック高に調整）
-      let baseHeight = Number((await $.ajax({url: `${baseNode}/chain/info`,type: 'GET',timeout: 1000})).height) - 5;
+      let baseHeight = Number((await $.ajax({url: `${baseNode}/chain/info`,type: 'GET',timeout: 2500})).height) - 5;
       if(document.getElementById('baseHeight').value){
         baseHeight = Number(document.getElementById('baseHeight').value);
       }
@@ -200,7 +200,7 @@
         // ノードリストからブロック高さに対応するハッシュ値を取得
         const results = await Promise.all(nodes.map(async (node) => await getBlocks(node, baseHeight - i)));
         // 基軸とするハッシュ値を取得
-        const baseHashValue = (await $.ajax({url: `${baseNode}/blocks/${baseHeight - i}`,type: 'GET',timeout: 1000})).meta.hash;
+        const baseHashValue = (await $.ajax({url: `${baseNode}/blocks/${baseHeight - i}`,type: 'GET',timeout: 2500})).meta.hash;
         // console.log(baseHeight - i, results);
         // ホスト名、ブロック高、ハッシュ値を表示
         $(`<div>ホスト：${baseNode}<br />ブロック高：${baseHeight - i}<br />ハッシュ値：<div class="text-truncate">${baseHashValue}</div></div>`).appendTo("#result");
