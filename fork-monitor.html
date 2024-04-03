@@ -70,17 +70,19 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
   <script src="https://xembook.github.io/nem2-browserify/symbol-sdk-pack-2.0.3.js"></script>
   <script>
-    function handleClickStart(){
+    const sym = require("/node_modules/symbol-sdk");
+
+    async function handleClickStart(){
       $("#result").show();
       document.getElementById('check_btn_start').disabled = true;
       // ノードURLを取得
       const node = $("#nodeUrlInput").val();
-      const sym = require("/node_modules/symbol-sdk");
       const repo = new sym.RepositoryFactoryHttp(node);
       const txRepo = repo.createTransactionRepository();
       const nsRepo = repo.createNamespaceRepository();
       const wsEndpoint = node.replace("http", "ws") + "/ws";
-      const listener = new sym.Listener(wsEndpoint, nsRepo, WebSocket);
+      // const listener = new sym.Listener(wsEndpoint, nsRepo, WebSocket);
+      listener = await listenerKeepOpening(repo, node);
       listener.open().then(() => {
         //ブロック生成の検知
         listener.newBlock().subscribe((block) => {
@@ -89,6 +91,25 @@
           $("#baseHeight").val(blockHeight);
         });
       });
+    }
+
+    async function listenerKeepOpening(repo, nodes) {
+      let wsEndpoint = repo.url.replace("http", "ws") + "/ws";
+      const nsRepo = repo.createNamespaceRepository();
+      const lner = new sym.Listener(wsEndpoint, nsRepo, WebSocket);
+      try {
+        await lner.open();
+        lner.newBlock();
+      } catch (e) {
+        console.log("fail websocket");
+        return await listenerKeepOpening(nodes);
+      }
+
+      lner.webSocket.onclose = async function () {
+        console.log("listener onclose");
+        return await listenerKeepOpening(nodes);
+      };
+      return lner;
     }
   </script>
 
